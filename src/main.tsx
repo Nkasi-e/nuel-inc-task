@@ -6,19 +6,17 @@ import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
 import './index.css'
 
-// Create Apollo Client with mock data
+
+const API_URL = import.meta.env.VITE_GRAPHQL_URL || 'http://localhost:4000/graphql'
+
 const client = new ApolloClient({
   link: createHttpLink({
-    uri: '/graphql', // This will be handled by our mock server
+    uri: API_URL,
   }),
   cache: new InMemoryCache(),
   defaultOptions: {
-    watchQuery: {
-      errorPolicy: 'all',
-    },
-    query: {
-      errorPolicy: 'all',
-    },
+    watchQuery: { errorPolicy: 'all' },
+    query: { errorPolicy: 'all' },
   },
 })
 

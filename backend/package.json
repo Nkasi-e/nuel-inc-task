@@ -1,0 +1,19 @@
+{
+  "name": "supplysight-backend",
+  "version": "1.0.0",
+  "description": "SupplySight GraphQL Backend",
+  "main": "server.prod.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.prod.js",
+    "dev": "node server.prod.js"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.9.5",
+    "graphql": "^16.8.1",
+    "graphql-tag": "^2.12.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

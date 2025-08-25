@@ -1,105 +1,112 @@
+import { useState, useEffect, useCallback } from 'react'
 import { FilterState, Warehouse } from '../types'
-import { Search, Filter, X } from 'lucide-react'
+import { Search, Filter } from 'lucide-react'
 import LoadingSpinner from './LoadingSpinner'
 
 interface FiltersRowProps {
   filters: FilterState
   warehouses: Warehouse[]
-  onFiltersChange: (filters: Partial<FilterState>) => void
+  onFilterChange: (filters: Partial<FilterState>) => void
   isLoading?: boolean
 }
 
-const FiltersRow = ({ filters, warehouses, onFiltersChange, isLoading = false }: FiltersRowProps) => {
-  const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'healthy', label: 'Healthy' },
-    { value: 'low', label: 'Low' },
-    { value: 'critical', label: 'Critical' }
-  ]
+const FiltersRow = ({ filters, warehouses, onFilterChange, isLoading = false }: FiltersRowProps) => {
+  const [searchValue, setSearchValue] = useState(filters.search)
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState(filters.search)
 
-  const clearFilters = () => {
-    onFiltersChange({ search: '', warehouse: '', status: '' })
-  }
+  // Debounce search input to prevent excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue)
+    }, 300) // 300ms delay
 
-  const hasActiveFilters = filters.search || filters.warehouse || filters.status
+    return () => clearTimeout(timer)
+  }, [searchValue])
+
+  // Update parent when debounced value changes
+  useEffect(() => {
+    if (debouncedSearchValue !== filters.search) {
+      onFilterChange({ search: debouncedSearchValue })
+    }
+  }, [debouncedSearchValue, filters.search, onFilterChange])
+
+  // Sync local state with parent filters
+  useEffect(() => {
+    setSearchValue(filters.search)
+  }, [filters.search])
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchValue(value)
+  }, [])
+
+  const handleWarehouseChange = useCallback((warehouse: string) => {
+    onFilterChange({ warehouse })
+  }, [onFilterChange])
+
+  const handleStatusChange = useCallback((status: string) => {
+    onFilterChange({ status })
+  }, [onFilterChange])
 
   return (
-    <div className="border-b border-gray-200 pb-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Products</h3>
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            disabled={isLoading}
-          >
-            <X className="w-4 h-4" />
-            <span>Clear filters</span>
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
         {/* Search Box */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="flex-1 relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            {isLoading ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <Search className="h-5 w-5 text-gray-400" />
+            )}
+          </div>
           <input
             type="text"
             placeholder="Search by name, SKU, or ID..."
-            value={filters.search}
-            onChange={(e) => onFiltersChange({ search: e.target.value })}
-            className={`input-field pl-10 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            value={searchValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             disabled={isLoading}
           />
-          {isLoading && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <LoadingSpinner size="sm" />
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+          {/* Warehouse Filter */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-5 w-5 text-gray-400" />
             </div>
-          )}
-        </div>
-
-        {/* Warehouse Dropdown */}
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <select
-            value={filters.warehouse}
-            onChange={(e) => onFiltersChange({ warehouse: e.target.value })}
-            className={`input-field pl-10 appearance-none cursor-pointer ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={isLoading}
-          >
-            <option value="">All Warehouses</option>
-            {warehouses.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>
-                {warehouse.name}
-              </option>
-            ))}
-          </select>
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <select
+              value={filters.warehouse}
+              onChange={(e) => handleWarehouseChange(e.target.value)}
+              className="block w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none bg-white"
+              disabled={isLoading}
+            >
+              <option value="">All Warehouses</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Status Dropdown */}
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <select
-            value={filters.status}
-            onChange={(e) => onFiltersChange({ status: e.target.value })}
-            className={`input-field pl-10 appearance-none cursor-pointer ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={isLoading}
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+          {/* Status Filter */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              value={filters.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className="block w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed appearance-none bg-white"
+              disabled={isLoading}
+            >
+              <option value="">All Status</option>
+              <option value="healthy">Healthy</option>
+              <option value="low">Low</option>
+              <option value="critical">Critical</option>
+            </select>
           </div>
         </div>
       </div>

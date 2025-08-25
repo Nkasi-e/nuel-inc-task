@@ -1,219 +1,240 @@
-import { Product, PaginationState } from '../types'
-import { getProductStatus, formatNumber } from '../utils/calculations'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
-import { TableSkeleton } from './Skeleton'
+import { Product, PaginationState, ProductStatus } from '../types'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Circle, AlertCircle, CheckCircle } from 'lucide-react'
+import { getProductStatus } from '../utils/calculations'
 
 interface ProductsTableProps {
   products: Product[]
   pagination: PaginationState
-  onProductSelect: (product: Product) => void
-  onPaginationChange: (pagination: Partial<PaginationState>) => void
   onPageChange: (page: number) => void
+  onProductClick: (product: Product) => void
   isLoading?: boolean
 }
 
-const ProductsTable = ({ 
-  products, 
-  pagination, 
-  onProductSelect, 
-  onPaginationChange, 
-  onPageChange,
-  isLoading = false
-}: ProductsTableProps) => {
+const ProductsTable = ({ products, pagination, onPageChange, onProductClick, isLoading = false }: ProductsTableProps) => {
   const totalPages = Math.ceil(pagination.totalItems / pagination.pageSize)
+  const startItem = (pagination.currentPage - 1) * pagination.pageSize + 1
+  const endItem = Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)
 
-  const handlePageSizeChange = (newPageSize: number) => {
-    onPaginationChange({ pageSize: newPageSize, currentPage: 1 })
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (status: ProductStatus) => {
+    switch (status.status) {
       case 'healthy':
-        return <CheckCircle className="w-4 h-4 text-success-600" />
-      case 'low':
-        return <AlertTriangle className="w-4 h-4 text-warning-600" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'critical':
-        return <XCircle className="w-4 h-4 text-danger-600" />
+        return <AlertCircle className="h-4 w-4 text-red-500" />
+      case 'low':
+        return <Circle className="h-4 w-4 text-yellow-500" />
       default:
         return null
     }
   }
 
-  const renderPaginationButtons = () => {
-    const buttons = []
-    const maxVisiblePages = 5
-    let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2))
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1)
-    }
-
-    // First page button
-    if (startPage > 1) {
-      buttons.push(
-        <button
-          key="first"
-          onClick={() => onPageChange(1)}
-          className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-          disabled={isLoading}
-        >
-          <ChevronsLeft className="w-4 h-4" />
-        </button>
-      )
-    }
-
-    // Previous page button
-    if (pagination.currentPage > 1) {
-      buttons.push(
-        <button
-          key="prev"
-          onClick={() => onPageChange(pagination.currentPage - 1)}
-          className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-          disabled={isLoading}
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-      )
-    }
-
-    // Page number buttons
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <button
-          key={i}
-          onClick={() => onPageChange(i)}
-          className={`px-3 py-1 text-sm rounded ${
-            i === pagination.currentPage
-              ? 'bg-primary-600 text-white'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }`}
-          disabled={isLoading}
-        >
-          {i}
-        </button>
-      )
-    }
-
-    // Next page button
-    if (pagination.currentPage < totalPages) {
-      buttons.push(
-        <button
-          key="next"
-          onClick={() => onPageChange(pagination.currentPage + 1)}
-          className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-          disabled={isLoading}
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      )
-    }
-
-    // Last page button
-    if (endPage < totalPages) {
-      buttons.push(
-        <button
-          key="last"
-          onClick={() => onPageChange(totalPages)}
-          className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-          disabled={isLoading}
-        >
-          <ChevronsRight className="w-4 h-4" />
-        </button>
-      )
-    }
-
-    return buttons
-  }
-
-  if (isLoading) {
-    return <TableSkeleton />
+  const getStatusColor = (status: ProductStatus) => {
+    return `${status.bgColor} ${status.color}`
   }
 
   return (
-    <div>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Table Header */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900">Products</h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Showing {startItem}-{endItem} of {pagination.totalItems} products
+        </p>
+      </div>
+
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-semibold text-gray-900 uppercase tracking-wide text-xs">PRODUCT</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-900 uppercase tracking-wide text-xs">SKU</th>
-              <th className="text-left py-3 px-4 font-semibold text-gray-900 uppercase tracking-wide text-xs">WAREHOUSE</th>
-              <th className="text-right py-3 px-4 font-semibold text-gray-900 uppercase tracking-wide text-xs">STOCK</th>
-              <th className="text-right py-3 px-4 font-semibold text-gray-900 uppercase tracking-wide text-xs">DEMAND</th>
-              <th className="text-center py-3 px-4 font-semibold text-gray-900 uppercase tracking-wide text-xs">STATUS</th>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                PRODUCT
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                SKU
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                WAREHOUSE
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                STOCK
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                DEMAND
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                STATUS
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {products.map((product) => {
-              const status = getProductStatus(product)
-              const isCritical = status.status === 'critical'
-              
-              return (
-                <tr
-                  key={product.id}
-                  onClick={() => onProductSelect(product)}
-                  className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    isCritical ? 'bg-red-50' : ''
-                  }`}
-                >
-                  <td className="py-4 px-4">
-                    <div>
-                      <div className="font-medium text-gray-900">{product.name}</div>
-                      <div className="text-sm text-gray-500">{product.id}</div>
-                    </div>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: pagination.pageSize }).map((_, index) => (
+                <tr key={`skeleton-${index}`} className="animate-pulse">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{product.sku}</td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{product.warehouse}</td>
-                  <td className="py-4 px-4 text-right">
-                    <span className="font-medium text-gray-900">{formatNumber(product.stock)}</span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
                   </td>
-                  <td className="py-4 px-4 text-right">
-                    <span className="font-medium text-gray-900">{formatNumber(product.demand)}</span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-16"></div>
                   </td>
-                  <td className="py-4 px-4 text-center">
-                    <div className="flex items-center justify-center space-x-2">
-                      {getStatusIcon(status.status)}
-                      <span className={`status-pill ${status.bgColor} ${status.color}`}>
-                        {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
-                      </span>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-12"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-4 bg-gray-200 rounded w-12"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="h-6 bg-gray-200 rounded-full w-16"></div>
                   </td>
                 </tr>
-              )
-            })}
+              ))
+            ) : products.length === 0 ? (
+              // Empty state
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center">
+                  <div className="text-gray-500">
+                    <p className="text-lg font-medium">No products found</p>
+                    <p className="text-sm mt-1">Try adjusting your filters or search terms</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              // Actual data
+              products.map((product) => {
+                const status = getProductStatus(product)
+                const isCritical = status.status === 'critical'
+                
+                return (
+                  <tr
+                    key={product.id}
+                    onClick={() => onProductClick(product)}
+                    className={`hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${
+                      isCritical ? 'bg-red-50' : ''
+                    }`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-500">ID: {product.id}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.sku}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.warehouse}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.stock.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {product.demand.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                        {getStatusIcon(status)}
+                        <span className="ml-1">{status.status}</span>
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-6">
-        <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-700">
-            Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1} to{' '}
-            {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of{' '}
-            {pagination.totalItems} results
-          </span>
-          
-          <select
-            value={pagination.pageSize}
-            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            className="input-field w-20 py-1 px-2 text-sm"
-            disabled={isLoading}
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-          
-          <span className="text-sm text-gray-500">per page</span>
+      {totalPages > 1 && (
+        <div className="bg-white px-6 py-3 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => onPageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => onPageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{startItem}</span> to{' '}
+                  <span className="font-medium">{endItem}</span> of{' '}
+                  <span className="font-medium">{pagination.totalItems}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => onPageChange(1)}
+                    disabled={pagination.currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">First</span>
+                    <ChevronsLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => onPageChange(pagination.currentPage - 1)}
+                    disabled={pagination.currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Previous</span>
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = Math.max(1, Math.min(totalPages - 4, pagination.currentPage - 2)) + i
+                    if (page > totalPages) return null
+                    
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => onPageChange(page)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          page === pagination.currentPage
+                            ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  })}
+                  
+                  <button
+                    onClick={() => onPageChange(pagination.currentPage + 1)}
+                    disabled={pagination.currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Next</span>
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => onPageChange(totalPages)}
+                    disabled={pagination.currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Last</span>
+                    <ChevronsRight className="h-5 w-5" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div className="flex items-center space-x-1">
-          {renderPaginationButtons()}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

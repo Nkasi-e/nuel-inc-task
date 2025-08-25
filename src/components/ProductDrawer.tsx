@@ -9,9 +9,18 @@ interface ProductDrawerProps {
   product: Product | null
   onClose: () => void
   isUpdating?: boolean
+  onUpdateDemand?: (productId: string, newDemand: number) => Promise<void>
+  onTransferStock?: (productId: string, quantity: number, destinationWarehouse: string) => Promise<void>
 }
 
-const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: ProductDrawerProps) => {
+const ProductDrawer = ({ 
+  isOpen, 
+  product, 
+  onClose, 
+  isUpdating = false,
+  onUpdateDemand,
+  onTransferStock
+}: ProductDrawerProps) => {
   const [activeTab, setActiveTab] = useState<'details' | 'demand' | 'transfer'>('details')
   const [demandForm, setDemandForm] = useState({ newDemand: '' })
   const [transferForm, setTransferForm] = useState({ 
@@ -27,24 +36,30 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
   const isDemandFormValid = demandForm.newDemand.trim() !== ''
   const isTransferFormValid = transferForm.quantity.trim() !== '' && transferForm.destinationWarehouse.trim() !== ''
 
-  const handleDemandUpdate = (e: React.FormEvent) => {
+  const handleDemandUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isDemandFormValid || isUpdating) return
+    if (!isDemandFormValid || isUpdating || !onUpdateDemand) return
     
-    // Here you would typically make a GraphQL mutation
-    console.log('Updating demand for', product.id, 'to', demandForm.newDemand)
-    // Reset form
-    setDemandForm({ newDemand: '' })
+    try {
+      await onUpdateDemand(product.id, parseInt(demandForm.newDemand))
+      setDemandForm({ newDemand: '' })
+    } catch (error) {
+      // Error is handled by the parent component
+      console.error('Failed to update demand:', error)
+    }
   }
 
-  const handleTransfer = (e: React.FormEvent) => {
+  const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isTransferFormValid || isUpdating) return
+    if (!isTransferFormValid || isUpdating || !onTransferStock) return
     
-    // Here you would typically make a GraphQL mutation
-    console.log('Transferring', transferForm.quantity, 'units to', transferForm.destinationWarehouse)
-    // Reset form
-    setTransferForm({ quantity: '', destinationWarehouse: '' })
+    try {
+      await onTransferStock(product.id, parseInt(transferForm.quantity), transferForm.destinationWarehouse)
+      setTransferForm({ quantity: '', destinationWarehouse: '' })
+    } catch (error) {
+      // Error is handled by the parent component
+      console.error('Failed to transfer stock:', error)
+    }
   }
 
   const tabs = [
@@ -64,12 +79,12 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
       )}
 
       {/* Drawer with slide animation */}
-      <div className={`fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 transform transition-all duration-500 ease-in-out ${
+      <div className={`fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 transform transition-all duration-500 ease-in-out ${
         isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Product Details</h2>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Product Details</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
@@ -85,7 +100,7 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 flex items-center justify-center space-x-2 py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
                   ? 'text-primary-600 border-b-2 border-primary-600'
                   : 'text-gray-500 hover:text-gray-700'
@@ -93,29 +108,30 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
               disabled={isUpdating}
             >
               <tab.icon className="w-4 h-4" />
-              <span>{tab.label}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
             </button>
           ))}
         </div>
 
         {/* Content with fade animation */}
-        <div className="p-6 overflow-y-auto h-full animate-fade-in">
+        <div className="p-4 sm:p-6 overflow-y-auto h-full animate-fade-in">
           {activeTab === 'details' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Product Info */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
-                <div className="space-y-3">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
+                <div className="space-y-2 sm:space-y-3">
                   <div className="flex items-center space-x-3">
-                    <Package className="w-4 h-4 text-gray-400" />
+                    <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span className="text-sm text-gray-600">SKU: {product.sku}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span className="text-sm text-gray-600">Warehouse: {product.warehouse}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <BarChart3 className="w-4 h-4 text-gray-400" />
+                    <BarChart3 className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span className="text-sm text-gray-600">ID: {product.id}</span>
                   </div>
                 </div>
@@ -130,14 +146,14 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
               </div>
 
               {/* Stock & Demand */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                   <div className="text-sm text-gray-600">Current Stock</div>
-                  <div className="text-2xl font-bold text-gray-900">{formatNumber(product.stock)}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900">{formatNumber(product.stock)}</div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                   <div className="text-sm text-gray-600">Current Demand</div>
-                  <div className="text-2xl font-bold text-gray-900">{formatNumber(product.demand)}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900">{formatNumber(product.demand)}</div>
                 </div>
               </div>
 
@@ -161,9 +177,9 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
           )}
 
           {activeTab === 'demand' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Update Demand</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Update Demand</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Update the demand forecast for this product. This will help in inventory planning.
                 </p>
@@ -208,9 +224,9 @@ const ProductDrawer = ({ isOpen, product, onClose, isUpdating = false }: Product
           )}
 
           {activeTab === 'transfer' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Transfer Stock</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Transfer Stock</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Transfer stock to another warehouse location.
                 </p>

@@ -1,150 +1,199 @@
 # SupplySight Dashboard
 
-A modern, responsive inventory management dashboard built with React, TypeScript, and Tailwind CSS.
+A modern, responsive supply chain inventory dashboard built with React, TypeScript, Tailwind CSS, and GraphQL.
 
 ## 🚀 Features
 
-- **Real-time Dashboard**: Live KPI metrics including total stock, demand, and fill rate
-- **Interactive Charts**: Beautiful line charts showing stock vs demand trends
-- **Advanced Filtering**: Search by product name, SKU, or ID, filter by warehouse and status
-- **Smart Status System**: Automatic status classification (Healthy, Low, Critical) with visual indicators
-- **Product Management**: Detailed product views with update demand and transfer stock capabilities
-- **Responsive Design**: Mobile-first approach with modern UI/UX patterns
-- **Pagination**: Efficient data handling with configurable page sizes
+- **📊 Real-time KPI Dashboard**: Total Stock, Total Demand, and Fill Rate calculations
+- **📈 Interactive Charts**: Stock vs Demand trend visualization with date range selection (7d, 14d, 30d)
+- **🔍 Advanced Filtering**: Search by name, SKU, ID with warehouse and status filters
+- **📋 Product Management**: Comprehensive product table with pagination
+- **🎯 Status Indicators**: Visual status pills (Healthy, Low, Critical) with icons
+- **📱 Fully Responsive**: Optimized for mobile, tablet, and desktop
+- **⚡ GraphQL API**: Mock GraphQL server with real-time mutations
+- **🎨 Modern UI/UX**: Clean, intuitive interface with smooth animations
+- **🔄 Real-time Updates**: Live data updates with loading states and error handling
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 18 + TypeScript
-- **Styling**: Tailwind CSS with custom design system
-- **Charts**: Recharts for data visualization
-- **Icons**: Lucide React for consistent iconography
-- **Build Tool**: Vite for fast development and building
-- **State Management**: Custom hooks with React hooks
-- **Mock Data**: Local data simulation for development
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
+- **State Management**: Apollo Client (GraphQL)
+- **Charts**: Recharts
+- **Icons**: Lucide React
+- **Date Handling**: date-fns
+- **Backend**: Apollo Server (Mock GraphQL)
 
-## 📁 Project Structure
+## 📦 Installation
 
-```
-src/
-├── components/          # Reusable UI components
-│   ├── Header.tsx      # Main header with logo and date range
-│   ├── KPICards.tsx    # KPI metrics display
-│   ├── ChartSection.tsx # Stock vs demand chart
-│   ├── FiltersRow.tsx  # Search and filter controls
-│   ├── ProductsTable.tsx # Products data table
-│   └── ProductDrawer.tsx # Product detail drawer
-├── hooks/              # Custom React hooks
-│   └── useInventory.ts # Inventory state management
-├── types/              # TypeScript type definitions
-│   └── index.ts        # All application types
-├── utils/              # Utility functions
-│   └── calculations.ts # Business logic calculations
-├── data/               # Mock data and constants
-│   └── mockData.ts     # Sample inventory data
-├── App.tsx             # Main application component
-├── main.tsx            # Application entry point
-└── index.css           # Global styles and Tailwind imports
-```
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd supplysight-dashboard
+   ```
 
-## 🚀 Getting Started
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### Prerequisites
+3. **Start the development servers**
+   ```bash
+   # Start both frontend and GraphQL server
+   npm run dev:all
+   
+   # Or start them separately:
+   npm run dev:server  # GraphQL server on port 4000
+   npm run dev         # Frontend on port 3000
+   ```
 
-- Node.js 16+ 
-- npm or yarn
+4. **Open your browser**
+   - Dashboard: http://localhost:3000
+   - GraphQL Playground: http://localhost:4000/graphql
 
-### Installation
+## 🎯 Usage
 
-1. Clone the repository:
-```bash
-git clone <https://github.com/Nkasi-e/nuel-inc-task.git>
-cd supplysight-dashboard
-```
+### Dashboard Features
 
-2. Install dependencies:
-```bash
-npm install
-```
+1. **Date Range Selection**: Click on 7d, 14d, or 30d chips to update the chart data
+2. **KPI Cards**: View real-time metrics for Total Stock, Total Demand, and Fill Rate
+3. **Interactive Chart**: Hover over data points to see detailed information
+4. **Product Filtering**: 
+   - Search by product name, SKU, or ID
+   - Filter by warehouse location
+   - Filter by status (Healthy, Low, Critical)
+5. **Product Table**: 
+   - Click on any row to open the product details drawer
+   - Navigate through pages with pagination
+6. **Product Actions**:
+   - View detailed product information
+   - Update demand forecasts
+   - Transfer stock between warehouses
 
-3. Start the development server:
-```bash
-npm run dev
-```
+### GraphQL API
 
-4. Open your browser and navigate to `http://localhost:3000`
+The dashboard includes a mock GraphQL server with the following operations:
 
-### Build for Production
+**Queries:**
+- `products`: Get filtered and paginated products
+- `warehouses`: Get all warehouse locations
+- `chartData`: Get chart data for selected date range
+- `kpis`: Get calculated KPI metrics
 
-```bash
-npm run build
-```
+**Mutations:**
+- `updateProductDemand`: Update product demand forecast
+- `transferStock`: Transfer stock between warehouses
+
+## 📱 Responsive Design
+
+The dashboard is fully responsive and optimized for:
+
+- **Mobile** (320px - 640px): Stacked layout, full-width drawer, compact tables
+- **Tablet** (641px - 1024px): Balanced layout with side-by-side elements
+- **Desktop** (1025px+): Full layout with optimal spacing and navigation
+
+### Responsive Features
+
+- **Adaptive Grids**: KPI cards stack on mobile, side-by-side on larger screens
+- **Flexible Charts**: Chart height adjusts based on screen size
+- **Mobile Drawer**: Product drawer takes full width on mobile devices
+- **Responsive Tables**: Table content adapts to screen size with horizontal scrolling
+- **Touch-Friendly**: Optimized touch targets for mobile devices
 
 ## 🎨 Design System
 
-### Color Palette
-- **Primary**: Blue shades for main actions and branding
-- **Success**: Green shades for positive indicators
-- **Warning**: Yellow/Orange shades for caution states
-- **Danger**: Red shades for critical situations
+### Colors
+- **Primary**: Blue (#3b82f6)
+- **Success**: Green (#10b981)
+- **Warning**: Yellow (#f59e0b)
+- **Danger**: Red (#ef4444)
 
-### Components
-- **Cards**: Consistent card design with shadows and borders
-- **Buttons**: Primary and secondary button variants
-- **Inputs**: Form inputs with focus states and validation
-- **Status Pills**: Color-coded status indicators
-- **Tables**: Responsive data tables with hover effects
+### Status Indicators
+- 🟢 **Healthy**: Stock > Demand
+- 🟡 **Low**: Stock = Demand
+- 🔴 **Critical**: Stock < Demand
 
-## 📊 Business Logic
-
-### Status Classification
-- **Healthy**: Stock > Demand (Green)
-- **Low**: Stock = Demand (Yellow)
-- **Critical**: Stock < Demand (Red with row highlighting)
-
-### KPI Calculations
-- **Total Stock**: Sum of all product stock levels
-- **Total Demand**: Sum of all product demand forecasts
-- **Fill Rate**: (Sum of min(stock, demand) / Total demand) × 100%
-
-### Filtering & Pagination
-- Real-time search across product name, SKU, and ID
-- Warehouse-based filtering
-- Status-based filtering
-- Configurable pagination (10, 25, 50 items per page)
+### Animations
+- Smooth slide-in drawer animations
+- Fade-in loading states
+- Hover effects and transitions
 
 ## 🔧 Customization
 
 ### Adding New Products
-Edit `src/data/mockData.ts` to add new products to the inventory.
+Edit `src/data/mockData.ts` to add new products:
 
-### Modifying Status Rules
-Update the `getProductStatus` function in `src/utils/calculations.ts` to change status classification logic.
+```typescript
+export const mockProducts: Product[] = [
+  {
+    id: "P-1001",
+    name: "Product Name",
+    sku: "SKU-CODE",
+    warehouse: "WAREHOUSE-ID",
+    stock: 100,
+    demand: 80
+  }
+  // ... more products
+]
+```
 
-### Styling Changes
+### Modifying GraphQL Schema
+Update the schema in `src/graphql/mockServer.ts` to add new fields or operations.
+
+### Styling Customization
 Modify `src/index.css` and `tailwind.config.js` to customize the design system.
 
-## 🚀 Future Enhancements
+## 🚀 Deployment
 
-- **GraphQL Integration**: Replace mock data with real GraphQL API
-- **Real-time Updates**: WebSocket integration for live data
-- **Advanced Analytics**: More detailed reporting and insights
-- **User Authentication**: Role-based access control
-- **Mobile App**: React Native companion app
-- **Export Features**: PDF/Excel report generation
-- **Notifications**: Alert system for critical inventory levels
+### Quick Deploy
+```bash
+# Run the automated deployment script
+./deploy.sh
+```
 
-## 📝 License
+### Manual Deployment
 
-This project is licensed under the MIT License.
+#### Frontend (Vercel)
+1. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
 
-## 🤝 Contributing
+2. **Deploy to Vercel**
+   ```bash
+   vercel --prod
+   ```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+3. **Configure Environment Variables**
+   - Add `VITE_GRAPHQL_URL` pointing to your backend
 
-## 📞 Support
+#### Backend (Railway/Render)
+1. **Deploy to Railway** (Recommended)
+   - Go to [railway.app](https://railway.app)
+   - Connect your GitHub repository
+   - Deploy the `server.prod.js` file
 
-For questions or support, please open an issue in the repository.
+2. **Or deploy to Render**
+   - Go to [render.com](https://render.com)
+   - Create a new Web Service
+   - Connect your repository
+
+### Architecture
+- **Frontend**: Vercel (React + Vite)
+- **Backend**: Railway/Render (Node.js + Apollo GraphQL)
+
+
+## 📈 Future Enhancements
+
+- [ ] Real-time WebSocket connections
+- [ ] Advanced analytics and reporting
+- [ ] User authentication and authorization
+- [ ] Export functionality (PDF, Excel)
+- [ ] Dark mode support
+- [ ] Multi-language support
+- [ ] Advanced filtering and sorting
+- [ ] Bulk operations
+- [ ] Notification system
+- [ ] Audit logging
+

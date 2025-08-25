@@ -15,78 +15,87 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-  const handleProductSelect = (product: Product) => {
+  const handleProductClick = (product: Product) => {
     setSelectedProduct(product)
     setIsDrawerOpen(true)
   }
 
-  const handleDrawerClose = () => {
+  const handleCloseDrawer = () => {
     setIsDrawerOpen(false)
     setSelectedProduct(null)
   }
 
-  const handleDateRangeChange = (dateRange: any) => {
-    inventory.updateDateRange(dateRange)
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onDateRangeChange={handleDateRangeChange} />
-      
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Error Alert */}
-        {inventory.error && (
-          <ErrorAlert
-            error={inventory.error}
-            onDismiss={inventory.clearError}
-            className="mb-4"
-          />
-        )}
-
-      
-        {inventory.isLoading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-8 shadow-xl">
-              <LoadingSpinner size="lg" text="Loading data..." />
-            </div>
+      {/* Global Loading Overlay */}
+      {inventory.isLoading && (
+        <div className="fixed inset-0 bg-white bg-opacity-75 z-50 flex items-center justify-center">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-gray-600">Loading inventory data...</p>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Error Alert */}
+      {inventory.error && (
+        <ErrorAlert 
+          message={inventory.error} 
+          onClose={inventory.clearError} 
+        />
+      )}
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        {/* Header */}
+        <Header 
+          onDateRangeChange={inventory.updateDateRange}
+          selectedRange={inventory.selectedDateRange}
+        />
 
         {/* KPI Cards */}
-        <KPICards kpis={inventory.kpis} />
-        
+        <div className="mt-6 sm:mt-8">
+          <KPICards kpis={inventory.kpis} />
+        </div>
+
         {/* Chart Section */}
-        <ChartSection 
-          chartData={inventory.chartData} 
-          selectedRange={inventory.selectedDateRange}
-          isLoading={inventory.isLoading}
-        />
-        
-        {/* Products Section */}
-        <div className="card">
-          <FiltersRow 
-            filters={inventory.filters}
-            warehouses={inventory.warehouses}
-            onFiltersChange={inventory.updateFilters}
-            isLoading={inventory.isLoading}
-          />
-          
-          <ProductsTable 
-            products={inventory.products}
-            pagination={inventory.pagination}
-            onProductSelect={handleProductSelect}
-            onPaginationChange={inventory.updatePagination}
-            onPageChange={inventory.goToPage}
+        <div className="mt-6 sm:mt-8">
+          <ChartSection 
+            chartData={inventory.chartData}
+            selectedRange={inventory.selectedDateRange}
             isLoading={inventory.isLoading}
           />
         </div>
-      </main>
 
-      <ProductDrawer
+        {/* Filters */}
+        <div className="mt-6 sm:mt-8">
+          <FiltersRow 
+            filters={inventory.filters}
+            warehouses={inventory.warehouses}
+            onFilterChange={inventory.updateFilters}
+            isLoading={inventory.isLoading}
+          />
+        </div>
+
+        {/* Products Table */}
+        <div className="mt-6 sm:mt-8">
+          <ProductsTable 
+            products={inventory.products}
+            pagination={inventory.pagination}
+            onPageChange={inventory.goToPage}
+            onProductClick={handleProductClick}
+            isLoading={inventory.isLoading}
+          />
+        </div>
+      </div>
+
+      {/* Product Drawer */}
+      <ProductDrawer 
         isOpen={isDrawerOpen}
         product={selectedProduct}
-        onClose={handleDrawerClose}
+        onClose={handleCloseDrawer}
         isUpdating={inventory.isUpdating}
+        onUpdateDemand={inventory.updateDemand}
+        onTransferStock={inventory.transferStock}
       />
     </div>
   )

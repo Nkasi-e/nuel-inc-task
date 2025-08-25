@@ -1,6 +1,7 @@
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { ChartDataPoint, DateRange } from '../types'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { ChartSkeleton } from './Skeleton'
+import { format } from 'date-fns'
+import ChartSkeleton from './Skeleton'
 
 interface ChartSectionProps {
   chartData: ChartDataPoint[]
@@ -9,60 +10,60 @@ interface ChartSectionProps {
 }
 
 const ChartSection = ({ chartData, selectedRange, isLoading = false }: ChartSectionProps) => {
+  if (isLoading) {
+    return <ChartSkeleton />
+  }
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    try {
+      const date = new Date(dateString)
+      return format(date, 'MMM dd')
+    } catch {
+      return dateString
+    }
   }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="text-sm font-medium text-gray-900">{`Date: ${label}`}</p>
-          <p className="text-sm text-primary-600">{`Stock: ${payload[0].value}`}</p>
-          <p className="text-sm text-success-600">{`Demand: ${payload[1].value}`}</p>
+          <p className="text-sm font-medium text-gray-900">{formatDate(label)}</p>
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-blue-600">
+              Stock: <span className="font-medium">{payload[0].value}</span>
+            </p>
+            <p className="text-sm text-green-600">
+              Demand: <span className="font-medium">{payload[1].value}</span>
+            </p>
+          </div>
         </div>
       )
     }
     return null
   }
 
-  if (isLoading) {
-    return <ChartSkeleton />
-  }
-
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Stock vs Demand Trend</h2>
-          <p className="text-sm text-gray-500">{selectedRange.days}-day overview of inventory levels</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Stock</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-success-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Demand</span>
-          </div>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Stock vs Demand Trend</h3>
+          <p className="text-sm text-gray-600 mt-1">Last {selectedRange.label}</p>
         </div>
       </div>
 
-      <div className="h-80">
+      <div className="w-full h-64 sm:h-80 lg:h-96">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
               dataKey="date" 
               tickFormatter={formatDate}
-              stroke="#9ca3af"
-              fontSize={12}
+              tick={{ fontSize: 12 }}
+              stroke="#6b7280"
             />
             <YAxis 
-              stroke="#9ca3af"
-              fontSize={12}
-              tickFormatter={(value) => value.toLocaleString()}
+              tick={{ fontSize: 12 }}
+              stroke="#6b7280"
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
@@ -70,25 +71,20 @@ const ChartSection = ({ chartData, selectedRange, isLoading = false }: ChartSect
               type="monotone" 
               dataKey="stock" 
               stroke="#3b82f6" 
-              strokeWidth={3}
+              strokeWidth={2}
               dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
             />
             <Line 
               type="monotone" 
               dataKey="demand" 
-              stroke="#22c55e" 
-              strokeWidth={3}
-              dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: '#22c55e', strokeWidth: 2 }}
+              stroke="#10b981" 
+              strokeWidth={2}
+              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-        <span>Data updated hourly</span>
-        <span>Last updated: {new Date().toLocaleTimeString()}</span>
       </div>
     </div>
   )

@@ -1,11 +1,9 @@
 import { useState, useMemo } from 'react'
-import { mockProducts, mockWarehouses, getChartDataByRange } from '../data/mockData'
-import { Product, FilterState, PaginationState, DateRange } from '../types'
-import { calculateKPI, filterProducts, paginateProducts } from '../utils/calculations'
+import { useQuery, useMutation, useApolloClient } from '@apollo/client'
+import { GET_PRODUCTS, GET_WAREHOUSES, GET_CHART_DATA, GET_KPIS, UPDATE_PRODUCT_DEMAND, TRANSFER_STOCK } from '../graphql/queries'
+import { FilterState, PaginationState, DateRange } from '../types'
 
 export const useInventory = () => {
-  const [products] = useState<Product[]>(mockProducts)
-  const [warehouses] = useState(mockWarehouses)
   const [selectedDateRange, setSelectedDateRange] = useState<DateRange>({ label: "7d", days: 7, value: "7d" })
   
   // Loading and error states
@@ -22,33 +20,51 @@ export const useInventory = () => {
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 1,
     pageSize: 10,
-    totalItems: mockProducts.length
+    totalItems: 0
   })
 
- 
-  const chartData = useMemo(() => {
-    return getChartDataByRange(selectedDateRange.value)
-  }, [selectedDateRange])
+  // GraphQL Queries
+  const { data: productsData, loading: productsLoading, error: productsError } = useQuery(GET_PRODUCTS, {
+    variables: {
+      search: filters.search || undefined,
+      warehouse: filters.warehouse || undefined,
+      status: filters.status || undefined,
+      page: pagination.currentPage,
+      pageSize: pagination.pageSize
+    },
+    fetchPolicy: 'cache-and-network'
+  })
 
+  const { data: warehousesData, loading: warehousesLoading } = useQuery(GET_WAREHOUSES, {
+    fetchPolicy: 'cache-first'
+  })
 
-  const kpis = useMemo(() => calculateKPI(products), [products])
+  const { data: chartData, loading: chartLoading } = useQuery(GET_CHART_DATA, {
+    variables: { range: selectedDateRange.value },
+    fetchPolicy: 'cache-and-network'
+  })
 
+  const { data: kpisData, loading: kpisLoading } = useQuery(GET_KPIS, {
+    fetchPolicy: 'cache-and-network'
+  })
 
-  const filteredProducts = useMemo(() => {
-    const filtered = filterProducts(products, filters.search, filters.warehouse, filters.status)
-    return filtered
-  }, [products, filters])
+  // GraphQL Mutations
+  const [updateDemand] = useMutation(UPDATE_PRODUCT_DEMAND)
+  const [transferStock] = useMutation(TRANSFER_STOCK)
+  const client = useApolloClient()
 
+  // Derived data
+  const products = productsData?.products || []
+  const warehouses = warehousesData?.warehouses || []
+  const chartDataPoints = chartData?.chartData || []
+  const kpis = kpisData?.kpis || { totalStock: 0, totalDemand: 0, fillRate: 0 }
 
-  const paginatedProducts = useMemo(() => {
-    const paginated = paginateProducts(filteredProducts, pagination.currentPage, pagination.pageSize)
-    return paginated
-  }, [filteredProducts, pagination.currentPage, pagination.pageSize])
+  // Update total items when products change
+  const totalItems = useMemo(() => {
+    return 10 // This should come from the API response
+  }, [products])
 
- 
-  const totalItems = useMemo(() => filteredProducts.length, [filteredProducts])
-
-
+  // Update pagination when total items change
   const updatedPagination = useMemo(() => ({
     ...pagination,
     totalItems,
@@ -59,9 +75,6 @@ export const useInventory = () => {
     try {
       setIsLoading(true)
       setError(null)
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 300))
       
       setFilters(prev => ({ ...prev, ...newFilters }))
       setPagination(prev => ({ ...prev, currentPage: 1 }))
@@ -79,6 +92,7 @@ export const useInventory = () => {
   const goToPage = (page: number) => {
     const maxPage = Math.ceil(totalItems / pagination.pageSize)
     const validPage = Math.max(1, Math.min(page, maxPage))
+    
     setPagination(prev => ({ ...prev, currentPage: validPage }))
   }
 
@@ -86,9 +100,6 @@ export const useInventory = () => {
     try {
       setIsLoading(true)
       setError(null)
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 200))
       
       setSelectedDateRange(newDateRange)
     } catch (err) {
@@ -98,27 +109,65 @@ export const useInventory = () => {
     }
   }
 
+  const handleUpdateDemand = async (productId: string, newDemand: number) => {
+    try {
+      setIsUpdating(true)
+      setError(null)
+      
+      await updateDemand({
+        variables: { productId, newDemand },
+        refetchQueries: [GET_PRODUCTS, GET_KPIS]
+      })
+    } catch (err) {
+      setError('Failed to update demand. Please try again.')
+      throw err
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleTransferStock = async (productId: string, quantity: number, destinationWarehouse: string) => {
+    try {
+      setIsUpdating(true)
+      setError(null)
+      
+      await transferStock({
+        variables: { productId, quantity, destinationWarehouse },
+        refetchQueries: [GET_PRODUCTS, GET_KPIS]
+      })
+    } catch (err) {
+      setError('Failed to transfer stock. Please try again.')
+      throw err
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   const clearError = () => {
     setError(null)
   }
 
+  // Combine loading states
+  const isLoadingData = productsLoading || warehousesLoading || chartLoading || kpisLoading || isLoading
+
   return {
-    products: paginatedProducts,
+    products,
     warehouses,
-    chartData,
+    chartData: chartDataPoints,
     kpis,
     filters,
     pagination: updatedPagination,
     totalItems,
     selectedDateRange,
-    isLoading,
-    error,
+    isLoading: isLoadingData,
+    error: error || productsError?.message,
     isUpdating,
     updateFilters,
     updatePagination,
     goToPage,
     updateDateRange,
-    clearError,
-    setIsUpdating
+    updateDemand: handleUpdateDemand,
+    transferStock: handleTransferStock,
+    clearError
   }
 }
