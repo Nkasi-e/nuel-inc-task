@@ -51,7 +51,7 @@ export const useInventory = () => {
   // GraphQL Mutations
   const [updateDemand] = useMutation(UPDATE_PRODUCT_DEMAND)
   const [transferStock] = useMutation(TRANSFER_STOCK)
-  const client = useApolloClient()
+  // const client = useApolloClient()
 
   // Derived data
   const products = productsData?.products || []
