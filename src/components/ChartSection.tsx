@@ -1,6 +1,5 @@
 import { ChartDataPoint, DateRange } from '../types'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { TrendingUp, TrendingDown } from 'lucide-react'
 import { ChartSkeleton } from './Skeleton'
 
 interface ChartSectionProps {

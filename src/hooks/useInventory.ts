@@ -118,6 +118,7 @@ export const useInventory = () => {
     updatePagination,
     goToPage,
     updateDateRange,
-    clearError
+    clearError,
+    setIsUpdating
   }
 }
