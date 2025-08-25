@@ -29,7 +29,7 @@ A modern, responsive supply chain inventory dashboard built with React, TypeScri
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone <https://github.com/Nkasi-e/nuel-inc-task.git>
    cd supplysight-dashboard
    ```
 
